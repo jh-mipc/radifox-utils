@@ -1,0 +1,30 @@
+import os
+from glob import glob
+from setuptools import setup, find_packages
+
+dir = os.path.abspath(os.path.dirname(__file__))
+with open(os.path.join(dir, 'README.md')) as f:
+    long_description = f.read()
+
+setup(name='degrade',
+      version='0.1.0',
+      author='Samuel W. Remedios',
+      description='Degrade a signal by blurring and downsampling',
+      long_description=long_description,
+      long_description_content_type='text/markdown',
+      author_email='samuel.remedios@jhu.edu',
+      url='https://gitlab.com/iacl/degrade',
+      license='MIT',
+      packages=find_packages(),
+      install_requires=[
+          'numpy',
+          'pytest',
+          'scipy',
+          'torch==1.11.0',
+          'resize[scipy] @ git+https://gitlab.com/shan-utils/resize@0.1.3#egg=resize-0.1.3',
+      ],
+      python_requires='>=3.7',
+      include_package_data=True,
+      classifiers=['Programming Language :: Python :: 3',
+                   'License :: OSI Approved :: MIT License',
+                   'Operating System :: OS Independent'])

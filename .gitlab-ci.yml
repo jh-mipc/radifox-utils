@@ -1,0 +1,12 @@
+image: python:3.7-alpine
+
+pages:
+  script:
+  - apk --no-cache add git
+  - pip3 install sphinx sphinx_rtd_theme
+  - sphinx-build docs/source public
+  artifacts:
+    paths:
+    - public
+  only:
+  - master
