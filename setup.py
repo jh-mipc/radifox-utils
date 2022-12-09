@@ -19,6 +19,7 @@ setup(name='degrade',
       install_requires=[
           'numpy',
           'pytest',
+          'pytest-cov',
           'scipy',
           'torch==1.11.0',
           'resize[scipy] @ git+https://gitlab.com/shan-utils/resize@0.1.3#egg=resize-0.1.3',

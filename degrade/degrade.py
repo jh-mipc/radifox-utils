@@ -24,7 +24,7 @@ def fwhm_units_to_voxel_space(fwhm_space, voxel_space):
     the corresponding FWHM in 2 microns should span 4 voxels (2 / 0.5)
 
     Args:
-        fwhm_space (float): the physical measurement of the FWHM 
+        fwhm_space (float): the physical measurement of the FWHM
         voxel_space (float): the physical measurement of the voxel resolution
 
     Returns:
@@ -56,7 +56,7 @@ def fwhm_to_std(gamma):
         gamma (float): the FWHM of the Gaussian kernel
 
     Returns:
-        (float): The corresponding standard deviation 
+        (float): The corresponding standard deviation
     """
     return gamma / (2 * np.sqrt(2 * np.log(2)))
 
@@ -66,13 +66,13 @@ def fwhm_needed(fwhm_hr, fwhm_lr):
     We model the resolution of a signal by the FWHM of the PSF
     at acquisition time.
 
-    When simulating the forward process, we want to "land on" the 
+    When simulating the forward process, we want to "land on" the
     specified resolution; this means we wish our result to have
     the specified FWHM.
 
     If our PSF is Gaussian, we can directly calculate the FWHM of the
     blur kernel needed to arrive at the target FWHM. When we convolve
-    two Gaussian kernels, we add their variances. Thus, to find the 
+    two Gaussian kernels, we add their variances. Thus, to find the
     correct blur kernel, we can take a difference of the variances between
     our input FWHM and output FWHM.
 
@@ -89,7 +89,7 @@ def fwhm_needed(fwhm_hr, fwhm_lr):
     std_lr = fwhm_to_std(fwhm_lr)
 
     # target std is root diff of variances
-    std_target = np.sqrt(std_lr ** 2 - std_hr ** 2)
+    std_target = np.sqrt(std_lr**2 - std_hr**2)
 
     # Translate back to FWHM space
     return std_to_fwhm(std_target)
@@ -115,24 +115,22 @@ def select_kernel(window_size, window_choice=None, fwhm=None, sym=True):
         (np.array): the parameterized kernel as a numpy array
     """
 
-    WINDOW_OPTIONS = ['blackman', 'hann', 'hamming',
-                      'gaussian', 'cosine', 'parzen']
+    WINDOW_OPTIONS = ["blackman", "hann", "hamming", "gaussian", "cosine", "parzen"]
     if window_choice is None:
         window_choice = np.random.choice(WINDOW_OPTIONS)
     elif window_choice not in WINDOW_OPTIONS:
-        raise ValueError('Window choice (%s) is not supported.' %
-                         window_choice)
+        raise ValueError("Window choice (%s) is not supported." % window_choice)
 
     window = getattr(windows, window_choice)
-    if window_choice in ['gaussian']:
+    if window_choice in ["gaussian"]:
         return window(window_size, fwhm_to_std(fwhm), sym)
     else:
         return window(window_size, sym)
 
 
-def blur(x, blur_fwhm, axis, kernel_type='gaussian', kernel_file=None):
+def blur(x, blur_fwhm, axis, kernel_type="gaussian", kernel_file=None):
     """
-    Blur a signal in 1D by convolution with a blur kernel along a 
+    Blur a signal in 1D by convolution with a blur kernel along a
     specified axis. The signal is edge-padded to keep its original size.
 
     Args:
@@ -140,7 +138,7 @@ def blur(x, blur_fwhm, axis, kernel_type='gaussian', kernel_file=None):
         blur_fwhm (float): The FWHM of the blur kernel
         axis (int): the axis along which to blur
         kernel_type (string): The shape of the blur kernel
-        kernel_file (string): The filepath to a user-specified kernel 
+        kernel_file (string): The filepath to a user-specified kernel
                               as a numpy file; must be `.npy`
 
     Returns:
@@ -152,27 +150,24 @@ def blur(x, blur_fwhm, axis, kernel_type='gaussian', kernel_file=None):
         window_size = int(2 * round(blur_fwhm) + 1)
         kernel = select_kernel(window_size, kernel_type, fwhm=blur_fwhm)
     kernel /= kernel.sum()  # remove gain
-    blurred = ndimage.convolve1d(x, kernel, mode='nearest', axis=axis)
+    blurred = ndimage.convolve1d(x, kernel, mode="nearest", axis=axis)
 
     return blurred
 
 
-def alias(img, k, down_order, up_order, axis):
+def alias(img, k, order, axis):
     """
-    Introduce aliasing in a signal in 1D by downsampling and upsampling.
-    This is a phenomena which occurs in all signals when a sufficient
-    bandwidth low-pass filter is NOT applied to a signal ahead of time.
+    Introduce aliasing in a signal in 1D by downsampling without applying a
+    low-pass filter. This is a phenomena which occurs in all signals when a
+    sufficient bandwidth low-pass filter is NOT applied to a signal ahead of time.
     So when we downsample an image, we introduce aliasing in the frequency domain,
-    which in turn affects the image domain. Upsampling does not introduce aliasing
-    but is necessary to return the image to its original shape.
+    which in turn affects the image domain.
 
     Args:
         img (np.array: shape (N1, N2, ..., NN)): ND array to be aliased
-        k (float): The resampling factor
-        down_order (int): The order of the B-spline used to downsample. Must
-                          be in the set {0, 1, 3, 5}
-        up_order (int): The order of the B-spline used to upsample. Must
-                          be in the set {0, 1, 3, 5}
+        k (float): The downsampling factor
+        order (int): The order of the B-spline used to downsample. Must
+                     be in the set {0, 1, 3, 5}
         axis (int): the axis along which to introduce aliasing
 
     Returns:
@@ -180,11 +175,5 @@ def alias(img, k, down_order, up_order, axis):
     """
     dxyz_down = [1.0 for _ in img.shape]
     dxyz_down[axis] = k
-    dxyz_up = [1.0 for _ in img.shape]
-    dxyz_up[axis] = 1 / k
 
-    img_ds = resize(img, dxyz=dxyz_down, order=down_order)
-    img_us = resize(img_ds, dxyz=dxyz_up, order=up_order,
-                    target_shape=img.shape)
-
-    return img_us
+    return resize(img, dxyz=dxyz_down, order=order)
