@@ -229,14 +229,17 @@ def select_kernel(window_size, window_choice=None, fwhm=None, sym=True):
 
 
 def apply_degrade(
-    x, slice_thickness, slice_separation, kernel_type, axis, window_size=None, order=3
+    x, hr_res, lr_res, slice_separation, kernel_type, axis, window_size=None, order=3
 ):
     """
     Degrade a 3D volume to a desired slice thickness and slice separation
     using the specified kernel along the specified axis.
     """
+    fwhm = fwhm_units_to_voxel_space(fwhm_needed(hr_res, lr_res), hr_res)
+
     if not window_size:
         window_size = int(2 * round(fwhm) + 1)
+
     scales = [1, 1, 1]
     scales[axis] = slice_separation
 
