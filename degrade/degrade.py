@@ -143,7 +143,7 @@ def pulse_based_profile(
     pulse = rf.slr.dzrf(N, tb, ptype, ftype, d1, d2, False)
 
     # simulate magnetization
-    t = np.linspace(-2 * tb, 2 * tb, n_taps)
+    t = np.linspace(-2 * tb, 2 * tb, window_size)
     [a, b] = rf.sim.abrm(pulse, t, balanced=True)
     Mxy = 2 * np.multiply(np.conj(a), b)
 
@@ -167,6 +167,7 @@ def select_kernel(window_size, window_choice=None, fwhm=None, sym=True):
             - \'cosine\'
             - \'parzen\'
             - \'blackman\'
+            - \'boxcar\'
         fwhm (float): The FWHM of the kernel
         sym (bool): Whether the kernel should be symmetric
 
