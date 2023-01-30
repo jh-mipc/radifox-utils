@@ -175,6 +175,7 @@ def select_kernel(window_size, window_choice=None, fwhm=None, sym=True):
             - \'parzen\'
             - \'blackman\'
             - \'boxcar\'
+            - \'rf-pulse-slr\' (simulate an RF pulse and get corresponding slice profile)
         fwhm (float): The FWHM of the kernel
         sym (bool): Whether the kernel should be symmetric
 
@@ -190,12 +191,16 @@ def select_kernel(window_size, window_choice=None, fwhm=None, sym=True):
         "cosine",
         "parzen",
         "rect",
+        "rf-pulse-slr",
         "boxcar",
     ]
     if window_choice is None:
         window_choice = np.random.choice(WINDOW_OPTIONS)
     elif window_choice not in WINDOW_OPTIONS:
         raise ValueError("Window choice (%s) is not supported." % window_choice)
+
+    if window_choice == "rf-pulse-slr":
+        return pulse_based_profile(window_size=window_size, slice_thickness=fwhm)
 
     # ===== Special case for rect =====
     if window_choice in ["rect", "boxcar"]:
@@ -221,6 +226,31 @@ def select_kernel(window_size, window_choice=None, fwhm=None, sym=True):
         return window(window_size, fwhm_to_std(fwhm), sym)
     else:
         return window(window_size, sym)
+
+
+def apply_degrade(
+    x, slice_thickness, slice_separation, kernel_type, axis, window_size=None, order=3
+):
+    """
+    Degrade a 3D volume to a desired slice thickness and slice separation
+    using the specified kernel along the specified axis.
+    """
+    if not window_size:
+        window_size = int(2 * round(fwhm) + 1)
+    scales = [1, 1, 1]
+    scales[axis] = slice_separation
+
+    kernel = select_kernel(
+        window_size=window_size, window_choice=kernel_type, fwhm=fwhm
+    )
+    # Unit energy
+    kernel = kernel / kernel.sum()
+
+    # Blur, then resample
+    x_lr = ndimage.convolve1d(x, kernel, mode="nearest", axis=axis)
+    x_lr = resize(x_lr, dxyz=scales, order=order)
+
+    return x_lr
 
 
 def blur(x, blur_fwhm, axis, kernel_type="gaussian", kernel_file=None):
