@@ -12,6 +12,7 @@ import numpy as np
 from resize.scipy import resize
 from scipy import ndimage
 from scipy.signal import windows
+import sigpy.mri.rf as rf
 
 
 def fwhm_units_to_voxel_space(fwhm_space, voxel_space):
@@ -95,6 +96,64 @@ def fwhm_needed(fwhm_hr, fwhm_lr):
     return std_to_fwhm(std_target)
 
 
+def pulse_based_profile(
+    window_size,
+    slice_thickness,
+    tb=16,
+    N=128,
+    d1=0.01,
+    d2=0.01,
+    ptype="ex",
+    ftype="ls",
+):
+    """
+    Physics-based simulation of slice profile via the SLR algorithm.
+    First design an RF pulse, then use ABRM to simulate the magnetization,
+    and finally convert to a slice profile for use in digital convolution.
+
+    :param [window_size]: [Number of taps in the slice profile.]
+    :type [window_size]: [Int]
+
+    :param [slice_thickness]: [Thickness of the desired slice in spatial metric units (cm, mm, um, etc.)]
+    :type [slice_thickness]: [Float]
+
+    :param [tb]: [Time-bandwidth product for the RF pulse]
+    :type [tb]: [Float]
+
+    :param [N]: [Number of samples for the RF pulse]
+    :type [N]: [Int]
+
+    :param [d1]: [Passband ripple level]
+    :type [d1]: [Float]
+
+    :param [d2]: [Stopband ripple level]
+    :type [d2]: [Float]
+
+    :param [ptype]: [Pulse type], defaults to [\'ex\']
+    :type [ptype]: [String]
+
+    :param [ftype]: [Filter type], defaults to [\'ls\']
+    :type [ftype]: [String]
+
+    :return: [A unit-energy 1D numpy array of the simulated slice profile]
+    :rtype: [np.array(dtype=np.float32)]
+    """
+
+    # design pulse
+    pulse = rf.slr.dzrf(N, tb, ptype, ftype, d1, d2, False)
+
+    # simulate magnetization
+    t = np.linspace(-2 * tb, 2 * tb, n_taps)
+    [a, b] = rf.sim.abrm(pulse, t, balanced=True)
+    Mxy = 2 * np.multiply(np.conj(a), b)
+
+    # convert to unit-energy magnitude for digital convolution
+    slice_profile = np.abs(Mxy)
+    slice_profile /= slice_profile.sum()
+
+    return slice_profile
+
+
 def select_kernel(window_size, window_choice=None, fwhm=None, sym=True):
     """
     Utility function to select a blur kernel.
@@ -121,6 +180,25 @@ def select_kernel(window_size, window_choice=None, fwhm=None, sym=True):
     elif window_choice not in WINDOW_OPTIONS:
         raise ValueError("Window choice (%s) is not supported." % window_choice)
 
+    # ===== Special case for rect =====
+    if window_choice in ["rect", "boxcar"]:
+        w = np.zeros(window_size, dtype=np.float32)
+        L = window_size // 2
+
+        for i in range(window_size):
+            # shift val up
+            n = np.abs(i - L)
+            if n > fwhm / 2:
+                w[i] = 0
+            elif n == fwhm / 2:
+                w[i] = 0.5
+            elif n < fwhm / 2:
+                w[i] = 1
+
+        w = w / w.sum()
+        return w
+
+    # ===== Otherwise use `windows` module =====
     window = getattr(windows, window_choice)
     if window_choice in ["gaussian"]:
         return window(window_size, fwhm_to_std(fwhm), sym)
