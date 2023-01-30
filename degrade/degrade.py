@@ -174,7 +174,16 @@ def select_kernel(window_size, window_choice=None, fwhm=None, sym=True):
         (np.array): the parameterized kernel as a numpy array
     """
 
-    WINDOW_OPTIONS = ["blackman", "hann", "hamming", "gaussian", "cosine", "parzen"]
+    WINDOW_OPTIONS = [
+        "blackman",
+        "hann",
+        "hamming",
+        "gaussian",
+        "cosine",
+        "parzen",
+        "rect",
+        "boxcar",
+    ]
     if window_choice is None:
         window_choice = np.random.choice(WINDOW_OPTIONS)
     elif window_choice not in WINDOW_OPTIONS:
