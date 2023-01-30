@@ -23,6 +23,7 @@ setup(
         "pytest-cov",
         "scipy",
         "torch==1.11.0",
+        "sigpy",
         "resize[scipy] @ git+https://gitlab.com/shan-utils/resize",
     ],
     python_requires=">=3.7",
