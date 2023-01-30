@@ -143,7 +143,7 @@ def pulse_based_profile(
     pulse = rf.slr.dzrf(N, tb, ptype, ftype, d1, d2, False)
 
     # simulate magnetization
-    t = np.linspace(-2 * tb, 2 * tb, window_size)
+    t = np.linspace(-2 * tb, 2 * tb, N * 4)
     [a, b] = rf.sim.abrm(pulse, t, balanced=True)
     Mxy = 2 * np.multiply(np.conj(a), b)
 
