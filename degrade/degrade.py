@@ -151,6 +151,13 @@ def pulse_based_profile(
     slice_profile = np.abs(Mxy)
     slice_profile /= slice_profile.sum()
 
+    # resample s.t. each sample of the kernel is in physical measurements
+    space = t * slice_thickness / tb
+    dx = space[1] - space[0]
+    slice_profile = resize(
+        slice_profile, dxyz=(1 / dx,), order=5, target_shape=(window_size,)
+    )
+
     return slice_profile
 
 
