@@ -326,6 +326,10 @@ def alias(img, k, order, axis):
         # TODO: Since we expect to run the kernel on a 2D image, we expect
         # `x` to be of shape (B, C, H, W) already. In the future this needs to be
         # generalized.
+
+        dxyz_down = [1.0 for _ in img.shape[2:]]
+        dxyz_down[axis] = k
+
         return resize(img, dxyz=dxyz_down, order=order)
 
     return resize(img, dxyz=dxyz_down, order=order)
