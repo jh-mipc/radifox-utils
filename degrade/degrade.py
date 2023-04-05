@@ -288,8 +288,15 @@ def blur(x, blur_fwhm, axis, kernel_type="gaussian", kernel_file=None, device='c
     if isinstance(x, np.ndarray):
         blurred = ndimage.convolve1d(x, kernel, mode="nearest", axis=axis)
     elif isinstance(x, torch.Tensor):
-        kernel = torch.from_numpy(kernel).unsqueeze(0).unsqueeze(1).to(device)
-        blurred = F.conv1d(x.unsqueeze(0).unsqueeze(1), kernel, padding='same').squeeze(0).squeeze(1)
+        # TODO: implementation in PyTorch at the moment only applies a 1D kernel
+        # to a 2D image. This needs to be generalized in the future.
+        kernel = kernel.squeeze()[None, None, :, None]
+        kernel = torch.tensor(kernel).float().to(device)
+
+        # TODO: Since we expect to run the kernel on a 2D image, we expect
+        # `x` to be of shape (B, C, H, W) already. In the future this needs to be
+        # generalized.
+        blurred = F.conv2d(x, kernel, padding='same')
     return blurred
 
 
