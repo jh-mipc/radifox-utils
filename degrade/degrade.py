@@ -321,7 +321,7 @@ def alias(img, k, order, axis):
     dxyz_down = [1.0 for _ in img.shape]
     dxyz_down[axis] = k
 
-    if isinstance(x, torch.Tensor):
+    if isinstance(img, torch.Tensor):
         from resize.pytorch import resize
         return resize(img.unsqueeze(0).unsqueeze(1), dxyz=dxyz_down, order=order)
 
