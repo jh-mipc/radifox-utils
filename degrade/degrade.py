@@ -323,6 +323,9 @@ def alias(img, k, order, axis):
 
     if isinstance(img, torch.Tensor):
         from resize.pytorch import resize
-        return resize(img.unsqueeze(0).unsqueeze(1), dxyz=dxyz_down, order=order)
+        # TODO: Since we expect to run the kernel on a 2D image, we expect
+        # `x` to be of shape (B, C, H, W) already. In the future this needs to be
+        # generalized.
+        return resize(img, dxyz=dxyz_down, order=order)
 
     return resize(img, dxyz=dxyz_down, order=order)
