@@ -8,7 +8,7 @@ with open(os.path.join(dir, "README.md")) as f:
 
 setup(
     name="degrade",
-    version="0.1.4",
+    version="0.1.5",
     author="Samuel W. Remedios",
     description="Degrade a signal by blurring and downsampling",
     long_description=long_description,

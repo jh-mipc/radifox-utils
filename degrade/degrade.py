@@ -262,7 +262,7 @@ def apply_degrade(
     return x_lr
 
 
-def blur(x, blur_fwhm, axis, kernel_type="gaussian", kernel_file=None, device='cpu'):
+def blur(x, blur_fwhm, axis, kernel_type="gaussian", kernel_file=None):
     """
     Blur a signal in 1D by convolution with a blur kernel along a
     specified axis. The signal is edge-padded to keep its original size.
@@ -291,7 +291,7 @@ def blur(x, blur_fwhm, axis, kernel_type="gaussian", kernel_file=None, device='c
         # TODO: implementation in PyTorch at the moment only applies a 1D kernel
         # to a 2D image. This needs to be generalized in the future.
         kernel = kernel.squeeze()[None, None, :, None]
-        kernel = torch.tensor(kernel).float().to(device)
+        kernel = torch.tensor(kernel).float().to(x.device)
 
         # TODO: Since we expect to run the kernel on a 2D image, we expect
         # `x` to be of shape (B, C, H, W) already. In the future this needs to be
