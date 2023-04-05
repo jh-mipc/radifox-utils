@@ -14,6 +14,12 @@ from scipy import ndimage
 from scipy.signal import windows
 import sigpy.mri.rf as rf
 
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+
+
 
 def fwhm_units_to_voxel_space(fwhm_space, voxel_space):
     """
@@ -256,13 +262,13 @@ def apply_degrade(
     return x_lr
 
 
-def blur(x, blur_fwhm, axis, kernel_type="gaussian", kernel_file=None):
+def blur(x, blur_fwhm, axis, kernel_type="gaussian", kernel_file=None, device='cpu'):
     """
     Blur a signal in 1D by convolution with a blur kernel along a
     specified axis. The signal is edge-padded to keep its original size.
 
     Args:
-        x (np.array: shape (N1, N2, ..., NN)): ND array to be blurred
+        x (np.array: shape (N1, N2, ..., NN) OR torch.Tensor of the same shape): signal to be blurred
         blur_fwhm (float): The FWHM of the blur kernel
         axis (int): the axis along which to blur
         kernel_type (string): The shape of the blur kernel
@@ -278,8 +284,12 @@ def blur(x, blur_fwhm, axis, kernel_type="gaussian", kernel_file=None):
         window_size = int(2 * round(blur_fwhm) + 1)
         kernel = select_kernel(window_size, kernel_type, fwhm=blur_fwhm)
     kernel /= kernel.sum()  # remove gain
-    blurred = ndimage.convolve1d(x, kernel, mode="nearest", axis=axis)
 
+    if isinstance(x, np.ndarray):
+        blurred = ndimage.convolve1d(x, kernel, mode="nearest", axis=axis)
+    elif isinstance(x, torch.Tensor):
+        kernel = torch.from_numpy(kernel).unsqueeze(0).unsqueeze(1).to(device)
+        blurred = F.conv1d(x.unsqueeze(0).unsqueeze(1), kernel, padding='same').squeeze(0).squeeze(1)
     return blurred
 
 
@@ -303,5 +313,9 @@ def alias(img, k, order, axis):
     """
     dxyz_down = [1.0 for _ in img.shape]
     dxyz_down[axis] = k
+
+    if isinstance(x, torch.Tensor):
+        from resize.pytorch import resize
+        return resize(img.unsqueeze(0).unsqueeze(1), dxyz=dxyz_down, order=order)
 
     return resize(img, dxyz=dxyz_down, order=order)
