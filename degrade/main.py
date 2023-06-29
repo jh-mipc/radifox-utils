@@ -109,7 +109,7 @@ def simulate_lr(
         nib.Nifti1Image(x_crop, affine=affine, header=header).to_filename(out_hr_fpath)
 
     with timer_context(
-        f"=== Degrading with {slice_profile} to {target_res} || {slice_separation - target_res}... ===",
+        f"=== Degrading with {slice_profile} to {target_res} || {round(slice_separation - target_res, 3)}... ===",
         verbose=verbose,
     ):
         x_lr = apply_degrade(
