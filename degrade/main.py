@@ -3,7 +3,7 @@ Create LR-HR pairs at the specified resolution with the specified slice profile.
 """
 
 import nibabel as nib
-from degrade import *
+from .degrade import *
 import numpy as np
 from pathlib import Path
 import argparse
