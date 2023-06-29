@@ -25,10 +25,9 @@ setup(
         "torch>=1.10.0",
         "sigpy",
         "resize @ git+https://gitlab.com/shan-utils/resize",
+        "nibabel",
+        "transforms3d",
     ],
-    extras_require={
-        "runscript": ["nibabel", "transforms3d", "degrade @ git+https://gitlab.com/iacl/degrade"]
-    }
     python_requires=">=3.7",
     include_package_data=True,
     classifiers=[
