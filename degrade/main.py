@@ -1,6 +1,7 @@
 """
 Create LR-HR pairs at the specified resolution with the specified slice profile.
 """
+import sys
 
 import nibabel as nib
 from .degrade import *
@@ -86,12 +87,14 @@ def simulate_lr(
     verbose,
 ):
     with timer_context(f"=== Loading {fpath}... ===", verbose=verbose):
-        obj = nib.load(fpath)
+        # noinspection PyTypeChecker
+        obj: nib.Nifti1Image = nib.load(fpath)
         affine = obj.affine
-        header = obj.header
+        # noinspection PyTypeChecker
+        header: nib.Nifti1Header = obj.header
         x = obj.get_fdata(dtype=np.float32)
 
-        orig_res = round(obj.header.get_zooms()[axis], 3)
+        orig_res = round(header.get_zooms()[axis], 3)
         target_res = round(slice_thickness, 3)
 
     n = x.shape[axis] - nearest_int_divisor_lower(x.shape[axis], slice_separation)
@@ -122,7 +125,7 @@ def simulate_lr(
         )
 
 
-if __name__ == "__main__":
+def main(args=None):
     # ===== Read arguments =====
     parser = argparse.ArgumentParser()
     parser.add_argument("--in-fpath", type=Path, required=True)
@@ -131,7 +134,7 @@ if __name__ == "__main__":
     parser.add_argument("--axis", type=int, default=2)
     parser.add_argument("--slice-thickness", type=float, required=True)
     parser.add_argument("--slice-separation", type=float, required=True)
-    parser.add_argument("--verbose", action="store_true")
+    parser.add_argument("--verbose", action="store_true", default=False)
     parser.add_argument(
         "--slice-profile",
         type=str,
@@ -143,31 +146,35 @@ if __name__ == "__main__":
         type=str,
         default="major",
         choices=["major", "minor", "center"],
-        help='Whether to crop the major or minor indices when creating paired HR-LR data. Choose "center" to center-crop, biasing towards a major crop if odd.',
+        help=('Whether to crop the major or minor indices when creating paired HR-LR data. '
+              'Choose "center" to center-crop, biasing towards a major crop if odd.'),
     )
 
-    args = parser.parse_args()
+    parsed_args = parser.parse_args(sys.argv[1:] if args is None else args)
 
-    verbose = True if args.verbose else False
+    for argname in ['in_fpath', 'out_lr_fpath', 'out_hr_fpath']:
+        setattr(parsed_args, argname, getattr(parsed_args, argname).resolve())
 
-    in_fpath = args.in_fpath.resolve()
-    out_lr_fpath = args.out_lr_fpath.resolve()
-    out_hr_fpath = args.out_hr_fpath.resolve()
+    if not parsed_args.in_fpath.exists():
+        raise ValueError('Input filepath must exist.')
 
-    for d in [out_lr_fpath.parent, out_hr_fpath.parent]:
-        if not d.exists():
-            d.mkdir(parents=True)
+    for argname in ['out_lr_fpath', 'out_hr_fpath']:
+        getattr(parsed_args, argname).parent.mkdir(parents=True, exist_ok=True)
 
     simulate_lr(
-        in_fpath,
-        args.slice_profile,
-        args.slice_thickness,
-        args.slice_separation,
-        args.axis,
-        out_lr_fpath,
-        out_hr_fpath,
-        args.crop_edge,
-        args.verbose,
+        parsed_args.in_fpath,
+        parsed_args.slice_profile,
+        parsed_args.slice_thickness,
+        parsed_args.slice_separation,
+        parsed_args.axis,
+        parsed_args.out_lr_fpath,
+        parsed_args.out_hr_fpath,
+        parsed_args.crop_edge,
+        parsed_args.verbose,
     )
-    if verbose:
+    if parsed_args.verbose:
         print("Done.")
+
+
+if __name__ == "__main__":
+    main()
