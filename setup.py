@@ -17,7 +17,7 @@ setup(
     license="MIT",
     packages=find_packages(),
     install_requires=[
-        "numpy=1.23.5",
+        "numpy==1.23.5",
         "scipy",
         "torch>=1.10.0",
         "sigpy",
