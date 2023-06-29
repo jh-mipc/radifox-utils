@@ -8,7 +8,7 @@ with open(os.path.join(dir, "README.md")) as f:
 
 setup(
     name="degrade",
-    version="0.1.6",
+    version="0.2",
     author="Samuel W. Remedios",
     description="Degrade a signal by blurring and downsampling",
     long_description=long_description,
@@ -26,6 +26,9 @@ setup(
         "sigpy",
         "resize @ git+https://gitlab.com/shan-utils/resize",
     ],
+    extras_require={
+        "runscript": ["nibabel", "transforms3d", "degrade @ git+https://gitlab.com/iacl/degrade"]
+    }
     python_requires=">=3.7",
     include_package_data=True,
     classifiers=[
