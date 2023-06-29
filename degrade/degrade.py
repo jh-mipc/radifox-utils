@@ -19,8 +19,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-
-
 def fwhm_units_to_voxel_space(fwhm_space, voxel_space):
     """
     Translate the spatial resolution of the specified FWHM
@@ -247,7 +245,7 @@ def apply_degrade(
         window_size = int(2 * round(fwhm) + 1)
 
     scales = [1, 1, 1]
-    scales[axis] = slice_separation
+    scales[axis] = slice_separation / hr_res
 
     kernel = select_kernel(
         window_size=window_size, window_choice=kernel_type, fwhm=fwhm
@@ -296,7 +294,7 @@ def blur(x, blur_fwhm, axis, kernel_type="gaussian", kernel_file=None):
         # TODO: Since we expect to run the kernel on a 2D image, we expect
         # `x` to be of shape (B, C, H, W) already. In the future this needs to be
         # generalized.
-        blurred = F.conv2d(x, kernel, padding='same')
+        blurred = F.conv2d(x, kernel, padding="same")
     return blurred
 
 
@@ -323,6 +321,7 @@ def alias(img, k, order, axis):
 
     if isinstance(img, torch.Tensor):
         from resize.pytorch import resize
+
         # TODO: Since we expect to run the kernel on a 2D image, we expect
         # `x` to be of shape (B, C, H, W) already. In the future this needs to be
         # generalized.
