@@ -1,9 +1,8 @@
 import os
-from glob import glob
 from setuptools import setup, find_packages
 
-dir = os.path.abspath(os.path.dirname(__file__))
-with open(os.path.join(dir, "README.md")) as f:
+pkg_dir = os.path.abspath(os.path.dirname(__file__))
+with open(os.path.join(pkg_dir, "README.md")) as f:
     long_description = f.read()
 
 setup(
@@ -19,15 +18,24 @@ setup(
     packages=find_packages(),
     install_requires=[
         "numpy",
-        "pytest",
-        "pytest-cov",
         "scipy",
         "torch>=1.10.0",
         "sigpy",
-        "resize @ git+https://gitlab.com/shan-utils/resize",
+        "resize @ git+https://gitlab.com/shan-utils/resize@0.1.3",
         "nibabel",
         "transforms3d",
     ],
+    extras_require={
+        "dev": [
+            "pytest",
+            "pytest-cov",
+        ]
+    },
+    entry_points={
+        "console_scripts": [
+            "apply-degrade=degrade.main:main",
+        ]
+    },
     python_requires=">=3.7",
     include_package_data=True,
     classifiers=[

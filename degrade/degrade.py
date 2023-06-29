@@ -7,16 +7,15 @@ are provided to calculate the kernel with particular FWHMs.
 Most support is currently for either a user-provided kernel or
 for a Gaussian kernel.
 """
-
 import numpy as np
 from resize.scipy import resize
+from resize.pytorch import resize as resize_pytorch
 from scipy import ndimage
 from scipy.signal import windows
 import sigpy.mri.rf as rf
 
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
+from torch.nn import functional
 
 
 def fwhm_units_to_voxel_space(fwhm_space, voxel_space):
@@ -104,7 +103,7 @@ def pulse_based_profile(
     window_size,
     slice_thickness,
     tb=16,
-    N=128,
+    num_samples=128,
     d1=0.01,
     d2=0.01,
     ptype="ex",
@@ -115,44 +114,33 @@ def pulse_based_profile(
     First design an RF pulse, then use ABRM to simulate the magnetization,
     and finally convert to a slice profile for use in digital convolution.
 
-    :param [window_size]: [Number of taps in the slice profile.]
-    :type [window_size]: [Int]
+    Args:
+        window_size (int): number of taps in the slice profile
+        slice_thickness (float): thickness of the desired slice in spation metric units (cm, mm, um, etc.)
+        tb (int): time-bandwidth product for the RF pulse
+        num_samples (int): number of sampels for the RF pulse
+        d1 (float): passband ripple level
+        d2 (float): stopband ripple level
+        ptype (str): pulse type, defaults to \'ex\' [\'st\' (small-tip excitation), \'ex\' (pi/2 excitation pulse),
+            \'se\' (spin-echo pulse), \'inv\' (inversion), or \'sat\' (pi/2 saturation pulse)]
+        ftype (str): filter type, defaults to \'ls\' [\'ms\' (sinc), \'pm\' (Parks-McClellan equal-ripple),
+            \'min\' (minphase using factored pm), \'max\' (maxphase using factored pm), \'ls\' (least squares)]
 
-    :param [slice_thickness]: [Thickness of the desired slice in spatial metric units (cm, mm, um, etc.)]
-    :type [slice_thickness]: [Float]
-
-    :param [tb]: [Time-bandwidth product for the RF pulse]
-    :type [tb]: [Float]
-
-    :param [N]: [Number of samples for the RF pulse]
-    :type [N]: [Int]
-
-    :param [d1]: [Passband ripple level]
-    :type [d1]: [Float]
-
-    :param [d2]: [Stopband ripple level]
-    :type [d2]: [Float]
-
-    :param [ptype]: [Pulse type], defaults to [\'ex\']
-    :type [ptype]: [String]
-
-    :param [ftype]: [Filter type], defaults to [\'ls\']
-    :type [ftype]: [String]
-
-    :return: [A unit-energy 1D numpy array of the simulated slice profile]
-    :rtype: [np.array(dtype=np.float32)]
+    Returns:
+        (np.array(dtype=np.float32)): A unit-energy 1D numpy array of the simulated slice profile
     """
 
     # design pulse
-    pulse = rf.slr.dzrf(N, tb, ptype, ftype, d1, d2, False)
+    pulse = rf.slr.dzrf(num_samples, tb, ptype, ftype, d1, d2, False)
 
     # simulate magnetization
-    t = np.linspace(-2 * tb, 2 * tb, N * 4)
+    t = np.linspace(-2 * tb, 2 * tb, num_samples * 4)
+    # noinspection PyTypeChecker
     [a, b] = rf.sim.abrm(pulse, t, balanced=True)
-    Mxy = 2 * np.multiply(np.conj(a), b)
+    mxy = 2 * np.multiply(np.conj(a), b)
 
     # convert to unit-energy magnitude for digital convolution
-    slice_profile = np.abs(Mxy)
+    slice_profile = np.abs(mxy)
     slice_profile /= slice_profile.sum()
 
     # resample s.t. each sample of the kernel is in physical measurements
@@ -163,6 +151,19 @@ def pulse_based_profile(
     )
 
     return slice_profile
+
+
+WINDOW_OPTIONS = [
+        "blackman",
+        "hann",
+        "hamming",
+        "gaussian",
+        "cosine",
+        "parzen",
+        "rect",
+        "rf-pulse-slr",
+        "boxcar",
+]
 
 
 def select_kernel(window_size, window_choice=None, fwhm=None, sym=True):
@@ -187,17 +188,6 @@ def select_kernel(window_size, window_choice=None, fwhm=None, sym=True):
         (np.array): the parameterized kernel as a numpy array
     """
 
-    WINDOW_OPTIONS = [
-        "blackman",
-        "hann",
-        "hamming",
-        "gaussian",
-        "cosine",
-        "parzen",
-        "rect",
-        "rf-pulse-slr",
-        "boxcar",
-    ]
     if window_choice is None:
         window_choice = np.random.choice(WINDOW_OPTIONS)
     elif window_choice not in WINDOW_OPTIONS:
@@ -209,11 +199,11 @@ def select_kernel(window_size, window_choice=None, fwhm=None, sym=True):
     # ===== Special case for rect =====
     if window_choice in ["rect", "boxcar"]:
         w = np.zeros(window_size, dtype=np.float32)
-        L = window_size // 2
+        leng = window_size // 2
 
         for i in range(window_size):
             # shift val up
-            n = np.abs(i - L)
+            n = np.abs(i - leng)
             if n > fwhm / 2:
                 w[i] = 0
             elif n == fwhm / 2:
@@ -294,7 +284,9 @@ def blur(x, blur_fwhm, axis, kernel_type="gaussian", kernel_file=None):
         # TODO: Since we expect to run the kernel on a 2D image, we expect
         # `x` to be of shape (B, C, H, W) already. In the future this needs to be
         # generalized.
-        blurred = F.conv2d(x, kernel, padding="same")
+        blurred = functional.conv2d(x, kernel, padding="same")
+    else:
+        raise TypeError('Input signal should be a NumPy array or PyTorch tensor.')
     return blurred
 
 
@@ -320,8 +312,6 @@ def alias(img, k, order, axis):
     dxyz_down[axis] = k
 
     if isinstance(img, torch.Tensor):
-        from resize.pytorch import resize
-
         # TODO: Since we expect to run the kernel on a 2D image, we expect
         # `x` to be of shape (B, C, H, W) already. In the future this needs to be
         # generalized.
@@ -329,6 +319,6 @@ def alias(img, k, order, axis):
         dxyz_down = [1.0 for _ in img.shape[2:]]
         dxyz_down[axis] = k
 
-        return resize(img, dxyz=dxyz_down, order=order)
+        return resize_pytorch(img, dxyz=dxyz_down, order=order)
 
     return resize(img, dxyz=dxyz_down, order=order)
