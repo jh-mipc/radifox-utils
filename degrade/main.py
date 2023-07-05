@@ -67,10 +67,33 @@ def remove_slices(x, n, axis, crop_edge):
     return x[tuple(crops)]
 
 
+def add_slices(x, n, axis, crop_edge):
+    if n == 0:
+        return x
+    pad_major, pad_minor = 0, 0
+    if crop_edge == "major":
+        pad_major = n
+    elif crop_edge == "minor":
+        pad_minor = n
+    elif crop_edge == "center":
+        pad_minor = int(np.floor(n / 2))
+        pad_major = int(np.ceil(n / 2))
+    pad_values = [(pad_minor, pad_major) if i == axis else (0, 0) for i in range(3)]
+    return np.pad(x, pad_values, mode='reflect')
+
+
 def nearest_int_divisor_lower(a, b):
     c = a / b
     while not c.is_integer():
         a -= 1
+        c = a / b
+    return a
+
+
+def nearest_int_divisor_higher(a, b):
+    c = a / b
+    while not c.is_integer():
+        a += 1
         c = a / b
     return a
 
@@ -83,7 +106,7 @@ def simulate_lr(
     axis,
     out_lr_fpath,
     out_hr_fpath,
-    crop_edge,
+    sizing_edge,
     verbose,
 ):
     with timer_context(f"=== Loading {fpath}... ===", verbose=verbose):
@@ -96,24 +119,37 @@ def simulate_lr(
 
         orig_res = round(header.get_zooms()[axis], 3)
         target_res = round(slice_thickness, 3)
+        sr_factor = round(slice_separation/min([round(i, 3) for i in header.get_zooms()]), 3)
 
-    n = x.shape[axis] - nearest_int_divisor_lower(x.shape[axis], slice_separation)
-    if crop_edge == "center":
-        crop_str = f"{int(np.floor(n/2))} minor and {int(np.ceil(n/2))} major"
+    n_lower = x.shape[axis] - nearest_int_divisor_lower(x.shape[axis], sr_factor)
+    n_higher = x.shape[axis] - nearest_int_divisor_higher(x.shape[axis], sr_factor)
+    n = n_lower if abs(n_lower) <= abs(n_higher) else n_higher
+
+    sizing_op = 'pass' if n == 0 else ('crop' if n > 0 else 'pad')
+    n = abs(n)
+    if sizing_edge == "center":
+        sizing_str = f"{int(np.floor(n / 2))} minor and {int(np.ceil(n / 2))} major"
     else:
-        crop_str = f"{n} {crop_edge}"
-    with timer_context(f"=== Removing {crop_str} slices... ===", verbose=verbose):
-        x_crop = remove_slices(x, n, axis, crop_edge)
+        sizing_str = f"{n} {sizing_edge}"
+
+    if sizing_op == 'crop':
+        with timer_context(f"=== Removing {sizing_str} slices... ===", verbose=verbose):
+            x_sized = remove_slices(x, n, axis, sizing_edge)
+    elif sizing_op == 'pad':
+        with timer_context(f"=== Adding {sizing_str} slices... ===", verbose=verbose):
+            x_sized = add_slices(x, n, axis, sizing_edge)
+    else:
+        x_sized = x
 
     with timer_context(f"=== Saving HR image... ===", verbose=verbose):
-        nib.Nifti1Image(x_crop, affine=affine, header=header).to_filename(out_hr_fpath)
+        nib.Nifti1Image(x_sized, affine=affine, header=header).to_filename(out_hr_fpath)
 
     with timer_context(
         f"=== Degrading with {slice_profile} to {target_res} || {round(slice_separation - target_res, 3)}... ===",
         verbose=verbose,
     ):
         x_lr = apply_degrade(
-            x_crop, orig_res, target_res, slice_separation, slice_profile, axis
+            x_sized, orig_res, target_res, slice_separation, slice_profile, axis
         )
 
     with timer_context(f"=== Saving LR image... ===", verbose=verbose):
@@ -142,12 +178,12 @@ def main(args=None):
         choices=["rf-pulse-slr", "gaussian"],
     )
     parser.add_argument(
-        "--crop-edge",
+        "--sizing-edge",
         type=str,
         default="major",
         choices=["major", "minor", "center"],
-        help=('Whether to crop the major or minor indices when creating paired HR-LR data. '
-              'Choose "center" to center-crop, biasing towards a major crop if odd.'),
+        help=('Whether to crop/pad the major or minor indices when creating paired HR-LR data. '
+              'Choose "center" to center-crop/pad, biasing towards major if odd.'),
     )
 
     parsed_args = parser.parse_args(sys.argv[1:] if args is None else args)
@@ -169,7 +205,7 @@ def main(args=None):
         parsed_args.axis,
         parsed_args.out_lr_fpath,
         parsed_args.out_hr_fpath,
-        parsed_args.crop_edge,
+        parsed_args.sizing_edge,
         parsed_args.verbose,
     )
     if parsed_args.verbose:
