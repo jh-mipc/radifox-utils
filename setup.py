@@ -34,6 +34,7 @@ setup(
     entry_points={
         "console_scripts": [
             "apply-degrade=degrade.main:main",
+            "remove-3D-inplane-interp=degrade.downsample_3D_inplane:main",
         ]
     },
     python_requires=">=3.7",
