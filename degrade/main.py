@@ -1,16 +1,15 @@
 """
 Create LR-HR pairs at the specified resolution with the specified slice profile.
 """
-import sys
-
+import argparse
+from contextlib import contextmanager
 import nibabel as nib
-from .degrade import *
 import numpy as np
 from pathlib import Path
-import argparse
-from transforms3d.affines import compose, decompose
 import time
-from contextlib import contextmanager
+import sys
+
+from .degrade import *
 
 
 @contextmanager
@@ -25,31 +24,6 @@ def timer_context(label, verbose=True):
         elapsed_time = end_time - start_time
         if verbose:  # Print elapsed time only if verbose is True
             print(f"\tElapsed time: {elapsed_time:.4f}s")
-
-
-def update_affine(affine, scales):
-    """Updates affine matrix to take into account new resolution
-    Args:
-        affine (numpy.ndarray): The affine matrix to update.
-        scales (tuple[float] or list[float]): Resolution scales in each direction.
-            Less than 1 for upsampling. For example, ``(2.0, 0.8)`` for a 2D image
-            and ``(1.3, 2.1, 0.3)`` for a 3D image.
-    """
-    # Decompose input affine
-    tranforms, rotation, zooms, shears = decompose(affine)
-
-    # Adjust zooms
-    zooms_new = zooms * np.array(scales)
-
-    # Calculate translation adjustment
-    t_val = (
-        np.where(np.abs(rotation.dot(scales)) > 1, -1, 1)
-        * np.sign(tranforms)
-        * np.abs(rotation.dot(zooms_new / 2 * ((1 / np.array(scales)) - 1)))
-    )
-
-    # Return the new composed affine matrix
-    return compose(tranforms + t_val, rotation, zooms_new, shears)
 
 
 def remove_slices(x, n, axis, crop_edge):
@@ -79,7 +53,7 @@ def add_slices(x, n, axis, crop_edge):
         pad_minor = int(np.floor(n / 2))
         pad_major = int(np.ceil(n / 2))
     pad_values = [(pad_minor, pad_major) if i == axis else (0, 0) for i in range(3)]
-    return np.pad(x, pad_values, mode='reflect')
+    return np.pad(x, pad_values, mode="reflect")
 
 
 def nearest_int_divisor_lower(a, b):
@@ -119,23 +93,25 @@ def simulate_lr(
 
         orig_res = round(header.get_zooms()[axis], 3)
         target_res = round(slice_thickness, 3)
-        sr_factor = round(slice_separation/min([round(i, 3) for i in header.get_zooms()]), 3)
+        sr_factor = round(
+            slice_separation / min([round(i, 3) for i in header.get_zooms()]), 3
+        )
 
     n_lower = x.shape[axis] - nearest_int_divisor_lower(x.shape[axis], sr_factor)
     n_higher = x.shape[axis] - nearest_int_divisor_higher(x.shape[axis], sr_factor)
     n = n_lower if abs(n_lower) <= abs(n_higher) else n_higher
 
-    sizing_op = 'pass' if n == 0 else ('crop' if n > 0 else 'pad')
+    sizing_op = "pass" if n == 0 else ("crop" if n > 0 else "pad")
     n = abs(n)
     if sizing_edge == "center":
         sizing_str = f"{int(np.floor(n / 2))} minor and {int(np.ceil(n / 2))} major"
     else:
         sizing_str = f"{n} {sizing_edge}"
 
-    if sizing_op == 'crop':
+    if sizing_op == "crop":
         with timer_context(f"=== Removing {sizing_str} slices... ===", verbose=verbose):
             x_sized = remove_slices(x, n, axis, sizing_edge)
-    elif sizing_op == 'pad':
+    elif sizing_op == "pad":
         with timer_context(f"=== Adding {sizing_str} slices... ===", verbose=verbose):
             x_sized = add_slices(x, n, axis, sizing_edge)
     else:
@@ -182,19 +158,21 @@ def main(args=None):
         type=str,
         default="major",
         choices=["major", "minor", "center"],
-        help=('Whether to crop/pad the major or minor indices when creating paired HR-LR data. '
-              'Choose "center" to center-crop/pad, biasing towards major if odd.'),
+        help=(
+            "Whether to crop/pad the major or minor indices when creating paired HR-LR data. "
+            'Choose "center" to center-crop/pad, biasing towards major if odd.'
+        ),
     )
 
     parsed_args = parser.parse_args(sys.argv[1:] if args is None else args)
 
-    for argname in ['in_fpath', 'out_lr_fpath', 'out_hr_fpath']:
+    for argname in ["in_fpath", "out_lr_fpath", "out_hr_fpath"]:
         setattr(parsed_args, argname, getattr(parsed_args, argname).resolve())
 
     if not parsed_args.in_fpath.exists():
-        raise ValueError('Input filepath must exist.')
+        raise ValueError("Input filepath must exist.")
 
-    for argname in ['out_lr_fpath', 'out_hr_fpath']:
+    for argname in ["out_lr_fpath", "out_hr_fpath"]:
         getattr(parsed_args, argname).parent.mkdir(parents=True, exist_ok=True)
 
     simulate_lr(

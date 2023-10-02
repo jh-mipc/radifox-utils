@@ -4,16 +4,16 @@ It's most common for 3D MRI to do scanner interpolation by a factor of 2,
 so that's the default for this script.
 
 """
-import sys
 
+import argparse
+from contextlib import contextmanager
 import nibabel as nib
-from .degrade import *
 import numpy as np
 from pathlib import Path
-import argparse
-from transforms3d.affines import compose, decompose
+import sys
 import time
-from contextlib import contextmanager
+
+from .degrade import *
 
 
 def apply_fermi(x, target_shape):
@@ -67,31 +67,6 @@ def timer_context(label, verbose=True):
         elapsed_time = end_time - start_time
         if verbose:  # Print elapsed time only if verbose is True
             print(f"\tElapsed time: {elapsed_time:.4f}s")
-
-
-def update_affine(affine, scales):
-    """Updates affine matrix to take into account new resolution
-    Args:
-        affine (numpy.ndarray): The affine matrix to update.
-        scales (tuple[float] or list[float]): Resolution scales in each direction.
-            Less than 1 for upsampling. For example, ``(2.0, 0.8)`` for a 2D image
-            and ``(1.3, 2.1, 0.3)`` for a 3D image.
-    """
-    # Decompose input affine
-    tranforms, rotation, zooms, shears = decompose(affine)
-
-    # Adjust zooms
-    zooms_new = zooms * np.array(scales)
-
-    # Calculate translation adjustment
-    t_val = (
-        np.where(np.abs(rotation.dot(scales)) > 1, -1, 1)
-        * np.sign(tranforms)
-        * np.abs(rotation.dot(zooms_new / 2 * ((1 / np.array(scales)) - 1)))
-    )
-
-    # Return the new composed affine matrix
-    return compose(tranforms + t_val, rotation, zooms_new, shears)
 
 
 def process(in_fpath, out_fpath, inplane_res=None, axis=0, verbose=False):
