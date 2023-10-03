@@ -165,6 +165,7 @@ def main(args=None):
             'Whether to crop/pad the "major" or "minor" indices when creating paired HR-LR data. '
             'Choose "center" to center-crop/pad, biasing towards major if odd. '
             'Choose "none" to skip the cropping step.'
+        )
     )
 
     parsed_args = parser.parse_args(sys.argv[1:] if args is None else args)
