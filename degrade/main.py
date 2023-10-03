@@ -97,16 +97,19 @@ def simulate_lr(
             slice_separation / min([round(i, 3) for i in header.get_zooms()]), 3
         )
 
-    n_lower = x.shape[axis] - nearest_int_divisor_lower(x.shape[axis], sr_factor)
-    n_higher = x.shape[axis] - nearest_int_divisor_higher(x.shape[axis], sr_factor)
-    n = n_lower if abs(n_lower) <= abs(n_higher) else n_higher
-
-    sizing_op = "pass" if n == 0 else ("crop" if n > 0 else "pad")
-    n = abs(n)
-    if sizing_edge == "center":
-        sizing_str = f"{int(np.floor(n / 2))} minor and {int(np.ceil(n / 2))} major"
+    if sizing_edge == "none":
+        sizing_op = "pass"
     else:
-        sizing_str = f"{n} {sizing_edge}"
+        n_lower = x.shape[axis] - nearest_int_divisor_lower(x.shape[axis], sr_factor)
+        n_higher = x.shape[axis] - nearest_int_divisor_higher(x.shape[axis], sr_factor)
+        n = n_lower if abs(n_lower) <= abs(n_higher) else n_higher
+
+        sizing_op = "pass" if n == 0 else ("crop" if n > 0 else "pad")
+        n = abs(n)
+        if sizing_edge == "center":
+            sizing_str = f"{int(np.floor(n / 2))} minor and {int(np.ceil(n / 2))} major"
+        else:
+            sizing_str = f"{n} {sizing_edge}"
 
     if sizing_op == "crop":
         with timer_context(f"=== Removing {sizing_str} slices... ===", verbose=verbose):
@@ -157,11 +160,11 @@ def main(args=None):
         "--sizing-edge",
         type=str,
         default="major",
-        choices=["major", "minor", "center"],
+        choices=["major", "minor", "center", "none"],
         help=(
-            "Whether to crop/pad the major or minor indices when creating paired HR-LR data. "
-            'Choose "center" to center-crop/pad, biasing towards major if odd.'
-        ),
+            'Whether to crop/pad the "major" or "minor" indices when creating paired HR-LR data. '
+            'Choose "center" to center-crop/pad, biasing towards major if odd. '
+            'Choose "none" to skip the cropping step.'
     )
 
     parsed_args = parser.parse_args(sys.argv[1:] if args is None else args)
