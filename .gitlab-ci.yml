@@ -3,7 +3,7 @@ image: python:3.7-alpine
 pages:
   script:
   - apk --no-cache add git
-  - pip3 install sphinx sphinx_rtd_theme
+  - pip3 install sphinx sphinx_rtd_theme numpy scipy transforms3d
   - sphinx-build docs/source public
   artifacts:
     paths:
