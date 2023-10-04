@@ -7,8 +7,14 @@ from scipy.ndimage import map_coordinates
 from .abstract import Resize
 
 
-def resize(image, dxyz, same_fov=True, target_shape=None, order=3,
-           return_coords=False):
+def resize(
+    image,
+    dxyz,
+    same_fov=True,
+    target_shape=None,
+    order=3,
+    return_coords=False,
+):
     """Wrapper function to resize an image using SciPy.
 
     See :class:`ResizeScipy` for more details.
@@ -24,8 +30,13 @@ def resize(image, dxyz, same_fov=True, target_shape=None, order=3,
         The sampling coordinates of this image.
 
     """
-    resizer = ResizeScipy(image, dxyz, same_fov=same_fov,
-                          target_shape=target_shape, order=order)
+    resizer = ResizeScipy(
+        image,
+        dxyz,
+        same_fov=same_fov,
+        target_shape=target_shape,
+        order=order,
+    )
     resizer.resize()
     if return_coords:
         return resizer.result, resizer.coords
@@ -69,7 +80,15 @@ class ResizeScipy(Resize):
         order (int): B-spline interpolation order.
 
     """
-    def __init__(self, image, dxyz, same_fov=True, target_shape=None, order=3):
+
+    def __init__(
+        self,
+        image,
+        dxyz,
+        same_fov=True,
+        target_shape=None,
+        order=3,
+    ):
         self.order = order
         super().__init__(image, dxyz, same_fov, target_shape)
 
@@ -91,10 +110,14 @@ class ResizeScipy(Resize):
         return self._coords
 
     def _format_coords(self):
-        self._coords = np.meshgrid(*self._coords, indexing='ij')
+        self._coords = np.meshgrid(*self._coords, indexing="ij")
         self._coords = np.array([c.flatten() for c in self._coords])
 
     def _resize(self):
-        self._result = map_coordinates(self.image, self.coords,
-                                       mode='nearest', order=self.order)
+        self._result = map_coordinates(
+            self.image,
+            self.coords,
+            mode="nearest",
+            order=self.order,
+        )
         self._result = self._result.reshape(self._new_shape)

@@ -1,4 +1,5 @@
 import torch
+
 """Resize with correct sampling step implemented with PyTorch
 
 """
@@ -7,8 +8,14 @@ import torch.nn.functional as F
 from .abstract import Resize
 
 
-def resize(image, dxyz, same_fov=True, target_shape=None, order=3,
-           return_coords=False):
+def resize(
+    image,
+    dxyz,
+    same_fov=True,
+    target_shape=None,
+    order=3,
+    return_coords=False,
+):
     """Wrapper function to resize an image using PyTorch.
 
     See :class:`ResizeTorch` for more details.
@@ -24,8 +31,13 @@ def resize(image, dxyz, same_fov=True, target_shape=None, order=3,
         The sampling coordinates of these images.
 
     """
-    resizer = ResizeTorch(image, dxyz, same_fov=same_fov,
-                          target_shape=target_shape, order=order)
+    resizer = ResizeTorch(
+        image,
+        dxyz,
+        same_fov=same_fov,
+        target_shape=target_shape,
+        order=order,
+    )
     resizer.resize()
     if return_coords:
         return resizer.result, resizer.coords
@@ -79,8 +91,15 @@ class ResizeTorch(Resize):
             from the end of each spatial dimension.
 
     """
-    def __init__(self, image, dxyz, same_fov=True, target_shape=None,
-                 order=3):
+
+    def __init__(
+        self,
+        image,
+        dxyz,
+        same_fov=True,
+        target_shape=None,
+        order=3,
+    ):
         self.order = order
         self._mode = self._get_mode(self.order)
         super().__init__(image, dxyz, same_fov, target_shape)
@@ -88,11 +107,11 @@ class ResizeTorch(Resize):
 
     def _get_mode(self, order):
         if order == 3:
-            return 'bicubic'
+            return "bicubic"
         elif order == 1:
-            return 'bilinear'
+            return "bilinear"
         elif order == 0:
-            return 'nearest'
+            return "nearest"
 
     def _check_shape(self):
         super()._check_shape()
@@ -114,7 +133,7 @@ class ResizeTorch(Resize):
     def _format_coords(self):
         # Map into the coordinates into [-1, 1] as required by F.grid_sample
         self._coords = self._normalize_coords()
-        self._coords = torch.meshgrid(*self._coords, indexing='ij')
+        self._coords = torch.meshgrid(*self._coords, indexing="ij")
         self._coords = [c[None, ..., None] for c in self._coords]
         # Reverse the order of  coordinates for F.grid_sample
         self._coords.reverse()
@@ -126,13 +145,22 @@ class ResizeTorch(Resize):
 
     def _normalize_coords(self):
         if self.same_fov:
-            fov = [stop - start - 1
-                   for start, stop in zip(self._old_fov[0], self._old_fov[1])]
+            fov = [
+                stop - start - 1
+                for start, stop in zip(self._old_fov[0], self._old_fov[1])
+            ]
         else:
             fov = self._old_fov
-        return [torch.tensor(c / f * 2 - 1).to(self.image)
-                for c, f in zip(self._coords, fov)]
+        return [
+            torch.tensor(c / f * 2 - 1).to(self.image)
+            for c, f in zip(self._coords, fov)
+        ]
 
     def _resize(self):
-        self._result = F.grid_sample(self.image, self._coords, mode=self._mode,
-                                     align_corners=True, padding_mode='border')
+        self._result = F.grid_sample(
+            self.image,
+            self._coords,
+            mode=self._mode,
+            align_corners=True,
+            padding_mode="border",
+        )
