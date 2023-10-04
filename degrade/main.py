@@ -4,10 +4,11 @@ Create LR-HR pairs at the specified resolution with the specified slice profile.
 import argparse
 from contextlib import contextmanager
 import nibabel as nib
-import numpy as np
 from pathlib import Path
 import time
 import sys
+
+from resize.affine import update_affine
 
 from .degrade import *
 
@@ -99,6 +100,8 @@ def simulate_lr(
 
     if sizing_edge == "none":
         sizing_op = "pass"
+        sizing_str = ""
+        n = 0
     else:
         n_lower = x.shape[axis] - nearest_int_divisor_lower(x.shape[axis], sr_factor)
         n_higher = x.shape[axis] - nearest_int_divisor_higher(x.shape[axis], sr_factor)
@@ -165,7 +168,7 @@ def main(args=None):
             'Whether to crop/pad the "major" or "minor" indices when creating paired HR-LR data. '
             'Choose "center" to center-crop/pad, biasing towards major if odd. '
             'Choose "none" to skip the cropping step.'
-        )
+        ),
     )
 
     parsed_args = parser.parse_args(sys.argv[1:] if args is None else args)

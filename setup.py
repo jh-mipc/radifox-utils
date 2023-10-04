@@ -40,7 +40,7 @@ setup(
         "scipy",
         "torch>=1.10.0",
         "sigpy",
-        "resize @ git+https://gitlab.com/shan-utils/resize@0.1.3",
+        "resize @ git+https://gitlab.com/iacl/resize@v0.2.0",
         "nibabel",
         "transforms3d",
     ],
