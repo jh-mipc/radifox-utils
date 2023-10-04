@@ -1,13 +1,32 @@
 import os
 from setuptools import setup, find_packages
 
+
+def get_version_and_cmdclass(pkg_path):
+    """Load version.py module without importing the whole package.
+
+    Template code from miniver
+    """
+    import os
+    from importlib.util import module_from_spec, spec_from_file_location
+
+    spec = spec_from_file_location("version", os.path.join(pkg_path, "_version.py"))
+    module = module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.__version__, module.get_cmdclass(pkg_path)
+
+
+version, cmdclass = get_version_and_cmdclass(r"degrade")
+
+
 pkg_dir = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(pkg_dir, "README.md")) as f:
     long_description = f.read()
 
 setup(
     name="degrade",
-    version="0.2",
+    version=version,
+    cmdclass=cmdclass,
     author="Samuel W. Remedios",
     description="Degrade a signal by blurring and downsampling",
     long_description=long_description,
