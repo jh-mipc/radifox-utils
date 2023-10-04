@@ -58,9 +58,13 @@ def add_slices(x, n, axis, crop_edge):
     return np.pad(x, pad_values, mode="reflect")
 
 
+def is_near_integer(x, atol=0.01):
+    return abs(x - round(x)) <= atol
+
+
 def nearest_int_divisor_lower(a, b):
     c = a / b
-    while not c.is_integer():
+    while not is_near_integer(c):
         a -= 1
         c = a / b
     return a
@@ -68,7 +72,7 @@ def nearest_int_divisor_lower(a, b):
 
 def nearest_int_divisor_higher(a, b):
     c = a / b
-    while not c.is_integer():
+    while not is_near_integer(c):
         a += 1
         c = a / b
     return a
