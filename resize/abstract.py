@@ -7,19 +7,26 @@ class Resize:
     Same FOV mode:
 
     .. code-block::
-        
+
         |   x   |   x   |   x   |
         | x | x | x | x | x | x |
 
     Aligning first point mode:
-        
+
     .. code-block::
 
         |   x   |   x   |   x   |
           | x | x | x | x | x |
 
     """
-    def __init__(self, image, dxyz, same_fov=True, target_shape=None):
+
+    def __init__(
+        self,
+        image,
+        dxyz,
+        same_fov=True,
+        target_shape=None,
+    ):
         self.image = image
         self.dxyz = dxyz
         self.same_fov = same_fov
@@ -75,12 +82,11 @@ class Resize:
     def _calc_sampling_coords_same_fov(self):
         coords = list()
         for l, r, d in zip(self._new_fov[0], self._new_fov[1], self.dxyz):
-            coords.append(np.arange(l + d/2, r - d/4, d))
+            coords.append(np.arange(l + d / 2, r - d / 4, d))
         return coords
 
     def _calc_sampling_coords_align_first(self):
-        return [np.arange(0, f + d/4, d)
-                for f, d in zip(self._new_fov, self.dxyz)]
+        return [np.arange(0, f + d / 4, d) for f, d in zip(self._new_fov, self.dxyz)]
 
     def _calc_old_fov_same_fov(self):
         """Calculates the FOV of the original image.
@@ -90,7 +96,7 @@ class Resize:
 
         """
         step_size = 1
-        left = (-0.5, ) * len(self._old_shape)
+        left = (-0.5,) * len(self._old_shape)
         right = tuple(l + s * step_size for l, s in zip(left, self._old_shape))
         return left, right
 
@@ -120,10 +126,10 @@ class Resize:
         return fov
 
     def _calc_new_shape_same_fov(self):
-        return tuple(int(round(s / d))
-                     for s, d in zip(self._old_shape, self.dxyz))
+        return tuple(int(round(s / d)) for s, d in zip(self._old_shape, self.dxyz))
 
     def _calc_new_shape_align_first(self):
         """The largest number of points to ensure new FOV is within the old."""
-        return tuple(int(np.floor((s - 1) / d) + 1)
-                     for s, d in zip(self._old_shape, self.dxyz))
+        return tuple(
+            int(np.floor((s - 1) / d) + 1) for s, d in zip(self._old_shape, self.dxyz)
+        )
