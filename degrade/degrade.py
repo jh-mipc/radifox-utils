@@ -8,13 +8,19 @@ Most support is currently for either a user-provided kernel or
 for a Gaussian kernel.
 """
 import numpy as np
+import sigpy.mri.rf as rf
 from resize.scipy import resize
-from resize.pytorch import resize as resize_pytorch
 from scipy import ndimage
 from scipy.signal import windows
-import sigpy.mri.rf as rf
-import torch
-from torch.nn import functional
+
+try:
+    import torch
+    from torch.nn import functional
+    from resize.pytorch import resize as resize_pytorch
+except ImportError:
+    torch = None
+    functional = None
+    resize_pytorch = None
 
 
 def fwhm_units_to_voxel_space(fwhm_space, voxel_space):
@@ -274,7 +280,7 @@ def blur(x, blur_fwhm, axis, kernel_type="gaussian", kernel_file=None):
 
     if isinstance(x, np.ndarray):
         blurred = ndimage.convolve1d(x, kernel, mode="nearest", axis=axis)
-    elif isinstance(x, torch.Tensor):
+    elif torch and isinstance(x, torch.Tensor):
         # TODO: implementation in PyTorch at the moment only applies a 1D kernel
         # to a 2D image. This needs to be generalized in the future.
         kernel = kernel.squeeze()[None, None, :, None]
@@ -310,7 +316,7 @@ def alias(img, k, order, axis):
     dxyz_down = [1.0 for _ in img.shape]
     dxyz_down[axis] = k
 
-    if isinstance(img, torch.Tensor):
+    if torch and isinstance(img, torch.Tensor):
         # TODO: Since we expect to run the kernel on a 2D image, we expect
         # `x` to be of shape (B, C, H, W) already. In the future this needs to be
         # generalized.

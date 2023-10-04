@@ -38,7 +38,6 @@ setup(
     install_requires=[
         "numpy==1.23.5",
         "scipy",
-        "torch>=1.10.0",
         "sigpy",
         "resize @ git+https://gitlab.com/iacl/resize@v0.2.0",
         "nibabel",
@@ -48,7 +47,8 @@ setup(
         "dev": [
             "pytest",
             "pytest-cov",
-        ]
+        ],
+        "pytorch": ["torch>=1.10.0"],
     },
     entry_points={
         "console_scripts": [

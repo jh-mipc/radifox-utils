@@ -2,15 +2,16 @@
 Create LR-HR pairs at the specified resolution with the specified slice profile.
 """
 import argparse
-from contextlib import contextmanager
-import nibabel as nib
-from pathlib import Path
-import time
 import sys
+import time
+from contextlib import contextmanager
+from pathlib import Path
 
+import nibabel as nib
+import numpy as np
 from resize.affine import update_affine
 
-from .degrade import *
+from .degrade import apply_degrade
 
 
 @contextmanager
