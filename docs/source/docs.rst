@@ -19,3 +19,10 @@ With PyTorch
 .. autoclass:: ResizeTorch
    :members:
    :inherited-members:
+
+
+Update Affine Matrix
+--------------------
+
+.. automodule:: resize.affine
+.. autofunction:: update_affine
