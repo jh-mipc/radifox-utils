@@ -19,9 +19,7 @@ def update_affine(affine, scales):
     zooms_new = zooms * np.array(scales)
 
     # Calculate translation adjustment
-    t_val = np.where(np.abs(rotation.dot(scales)) > 1, -1, 1) * rotation.dot(
-        zooms_new / 2 * ((1 / np.array(scales)) - 1)
-    )
+    t_val = rotation.dot(zooms_new / 2 * ((1 / np.array(scales)) - 1))
 
     # Return the new composed affine matrix
-    return compose(tranforms + t_val, rotation, zooms_new, shears)
+    return compose(tranforms - t_val, rotation, zooms_new, shears)
