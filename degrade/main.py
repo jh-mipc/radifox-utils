@@ -58,24 +58,22 @@ def add_slices(x, n, axis, crop_edge):
     return np.pad(x, pad_values, mode="reflect")
 
 
-def is_near_integer(x, atol=0.01):
-    return abs(x - round(x)) <= atol
+def is_same_after_scale(a, b):
+    return a == int(round(int(round(a / b)) * b))
 
 
-def nearest_int_divisor_lower(a, b):
-    c = a / b
-    while not is_near_integer(c):
-        a -= 1
-        c = a / b
-    return a
+def find_nearest_same(a, b):
+    lower = a
+    while not is_same_after_scale(lower, b):
+        lower -= 1
+    lower = a - lower
 
+    upper = a
+    while not is_same_after_scale(upper, b):
+        upper += 1
+    upper = a - upper
 
-def nearest_int_divisor_higher(a, b):
-    c = a / b
-    while not is_near_integer(c):
-        a += 1
-        c = a / b
-    return a
+    return lower if abs(lower) <= abs(upper) else upper
 
 
 def simulate_lr(
@@ -108,9 +106,7 @@ def simulate_lr(
         sizing_str = ""
         n = 0
     else:
-        n_lower = x.shape[axis] - nearest_int_divisor_lower(x.shape[axis], sr_factor)
-        n_higher = x.shape[axis] - nearest_int_divisor_higher(x.shape[axis], sr_factor)
-        n = n_lower if abs(n_lower) <= abs(n_higher) else n_higher
+        n = find_nearest_same(x.shape[axis], sr_factor)
 
         sizing_op = "pass" if n == 0 else ("crop" if n > 0 else "pad")
         n = abs(n)
