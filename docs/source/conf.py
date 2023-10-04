@@ -18,8 +18,8 @@ sys.path.insert(0, os.path.abspath('../..'))
 # -- Project information -----------------------------------------------------
 
 project = 'Resize'
-copyright = '2021, Shuo Han'
-author = 'Shuo Han'
+copyright = '2023, IACL'
+author = 'IACL'
 
 # The full version, including alpha/beta/rc tags
 import subprocess

@@ -1,5 +1,5 @@
 import numpy as np
-from transforms3d import decompose, compose
+from transforms3d.affines import decompose, compose
 
 
 def update_affine(affine, scales):
