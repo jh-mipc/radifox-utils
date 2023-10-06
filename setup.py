@@ -39,7 +39,7 @@ setup(
         "numpy==1.23.5",
         "scipy",
         "sigpy",
-        "resize @ git+https://gitlab.com/iacl/resize@v0.2.0",
+        "resize @ git+https://gitlab.com/iacl/resize@v0.3.0",
         "nibabel",
         "transforms3d",
     ],
