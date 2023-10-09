@@ -2,14 +2,16 @@
 Create LR-HR pairs at the specified resolution with the specified slice profile.
 """
 import argparse
+import sys
+import time
 from contextlib import contextmanager
+from pathlib import Path
+
 import nibabel as nib
 import numpy as np
-from pathlib import Path
-import time
-import sys
+from resize.affine import update_affine
 
-from .degrade import *
+from .degrade import apply_degrade
 
 
 @contextmanager
@@ -56,20 +58,22 @@ def add_slices(x, n, axis, crop_edge):
     return np.pad(x, pad_values, mode="reflect")
 
 
-def nearest_int_divisor_lower(a, b):
-    c = a / b
-    while not c.is_integer():
-        a -= 1
-        c = a / b
-    return a
+def is_same_after_scale(a, b):
+    return a == int(round(int(round(a / b)) * b))
 
 
-def nearest_int_divisor_higher(a, b):
-    c = a / b
-    while not c.is_integer():
-        a += 1
-        c = a / b
-    return a
+def find_nearest_same(a, b):
+    lower = a
+    while not is_same_after_scale(lower, b):
+        lower -= 1
+    lower = a - lower
+
+    upper = a
+    while not is_same_after_scale(upper, b):
+        upper += 1
+    upper = a - upper
+
+    return lower if abs(lower) <= abs(upper) else upper
 
 
 def simulate_lr(
@@ -97,16 +101,19 @@ def simulate_lr(
             slice_separation / min([round(i, 3) for i in header.get_zooms()]), 3
         )
 
-    n_lower = x.shape[axis] - nearest_int_divisor_lower(x.shape[axis], sr_factor)
-    n_higher = x.shape[axis] - nearest_int_divisor_higher(x.shape[axis], sr_factor)
-    n = n_lower if abs(n_lower) <= abs(n_higher) else n_higher
-
-    sizing_op = "pass" if n == 0 else ("crop" if n > 0 else "pad")
-    n = abs(n)
-    if sizing_edge == "center":
-        sizing_str = f"{int(np.floor(n / 2))} minor and {int(np.ceil(n / 2))} major"
+    if sizing_edge == "none":
+        sizing_op = "pass"
+        sizing_str = ""
+        n = 0
     else:
-        sizing_str = f"{n} {sizing_edge}"
+        n = find_nearest_same(x.shape[axis], sr_factor)
+
+        sizing_op = "pass" if n == 0 else ("crop" if n > 0 else "pad")
+        n = abs(n)
+        if sizing_edge == "center":
+            sizing_str = f"{int(np.floor(n / 2))} minor and {int(np.ceil(n / 2))} major"
+        else:
+            sizing_str = f"{n} {sizing_edge}"
 
     if sizing_op == "crop":
         with timer_context(f"=== Removing {sizing_str} slices... ===", verbose=verbose):
@@ -157,10 +164,11 @@ def main(args=None):
         "--sizing-edge",
         type=str,
         default="major",
-        choices=["major", "minor", "center"],
+        choices=["major", "minor", "center", "none"],
         help=(
-            "Whether to crop/pad the major or minor indices when creating paired HR-LR data. "
-            'Choose "center" to center-crop/pad, biasing towards major if odd.'
+            'Whether to crop/pad the "major" or "minor" indices when creating paired HR-LR data. '
+            'Choose "center" to center-crop/pad, biasing towards major if odd. '
+            'Choose "none" to skip the cropping step.'
         ),
     )
 

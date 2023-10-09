@@ -4,16 +4,15 @@ It's most common for 3D MRI to do scanner interpolation by a factor of 2,
 so that's the default for this script.
 
 """
-
 import argparse
-from contextlib import contextmanager
-import nibabel as nib
-import numpy as np
-from pathlib import Path
 import sys
 import time
+from contextlib import contextmanager
+from pathlib import Path
 
-from .degrade import *
+import nibabel as nib
+import numpy as np
+from resize.affine import update_affine
 
 
 def apply_fermi(x, target_shape):
@@ -70,9 +69,7 @@ def timer_context(label, verbose=True):
 
 
 def process(in_fpath, out_fpath, inplane_res=None, axis=0, verbose=False):
-    obj = nib.load(in_fpath)
-    affine = obj.affine
-    header = obj.header
+    obj = nib.Nifti1Image.load(in_fpath)
     img = obj.get_fdata(dtype=np.float32)
 
     zooms = list(obj.header.get_zooms())
@@ -93,8 +90,10 @@ def process(in_fpath, out_fpath, inplane_res=None, axis=0, verbose=False):
 
     with timer_context(f"=== Degrading in-plane... ===", verbose=verbose):
         img = downsample_k_space(img, target_shape=downsample_shape)
-        new_affine = update_affine(affine, scales)
-        nib.Nifti1Image(img, affine=new_affine, header=header).to_filename(out_fpath)
+        new_affine = update_affine(obj.affine, scales)
+        nib.Nifti1Image(img, affine=new_affine, header=obj.header).to_filename(
+            out_fpath
+        )
 
 
 def main(args=None):
