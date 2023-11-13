@@ -1,0 +1,2 @@
+This library was originally (incorrectly) marked as owned by Shuo Han, the correct owner [degrade developers] has been used here.
+Further modifications in this package fall under the package license.
