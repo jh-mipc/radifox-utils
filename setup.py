@@ -1,5 +1,5 @@
 from pathlib import Path
-from setuptools import setup, find_packages
+from setuptools import setup, find_namespace_packages
 
 
 __package_name__ = "radifox-utils"
@@ -32,7 +32,7 @@ setup(
     author_email="iaclsoftware@jhu.edu",
     url="https://github.com/iacl/radifox-utils",
     license="Apache License, 2.0",
-    packages=find_packages(),
+    packages=find_namespace_packages(include=['radifox.*']),
     entry_points={
         "console_scripts": [
             "apply-degrade=radifox.utils.degrade.main:main",
