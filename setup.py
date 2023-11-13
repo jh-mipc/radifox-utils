@@ -19,7 +19,7 @@ def get_version_and_cmdclass(pkg_path):
     return module.__version__, module.get_cmdclass(pkg_path)
 
 
-__version__, cmdclass = get_version_and_cmdclass(__package_name__)
+__version__, cmdclass = get_version_and_cmdclass('radifox/utils')
 
 setup(
     name=__package_name__,
