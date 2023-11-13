@@ -12,7 +12,7 @@ from pathlib import Path
 
 import nibabel as nib
 import numpy as np
-from resize.affine import update_affine
+from ..resize.affine import update_affine
 
 
 def apply_fermi(x, target_shape):

@@ -9,14 +9,15 @@ for a Gaussian kernel.
 """
 import numpy as np
 import sigpy.mri.rf as rf
-from resize.scipy import resize
 from scipy import ndimage
 from scipy.signal import windows
+
+from ..resize.scipy import resize
 
 try:
     import torch
     from torch.nn import functional
-    from resize.pytorch import resize as resize_pytorch
+    from ..resize.pytorch import resize as resize_pytorch
 except ImportError:
     torch = None
     functional = None

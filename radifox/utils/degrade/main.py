@@ -9,9 +9,9 @@ from pathlib import Path
 
 import nibabel as nib
 import numpy as np
-from resize.affine import update_affine
 
 from .degrade import apply_degrade
+from ..resize.affine import update_affine
 
 
 @contextmanager
