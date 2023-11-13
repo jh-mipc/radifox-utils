@@ -26,11 +26,11 @@ setup(
     version=__version__,
     cmdclass=cmdclass,
     author="IACL",
+    author_email="iaclsoftware@jhu.edu",
+    url="https://github.com/iacl/radifox-utils",
     description="Medical image utilities provided with RADIFOX",
     long_description=(Path(__file__).parent.resolve() / "README.md").read_text(),
     long_description_content_type="text/markdown",
-    author_email="iaclsoftware@jhu.edu",
-    url="https://github.com/iacl/radifox-utils",
     license="Apache License, 2.0",
     packages=find_namespace_packages(include=['radifox.*']),
     entry_points={
