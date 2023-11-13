@@ -27,7 +27,7 @@ setup(
     cmdclass=cmdclass,
     author="IACL",
     author_email="iaclsoftware@jhu.edu",
-    url="https://github.com/iacl/radifox-utils",
+    url="https://gitlab.com/iacl/radifox-utils",
     description="Medical image utilities provided with RADIFOX",
     long_description=(Path(__file__).parent.resolve() / "README.md").read_text(),
     long_description_content_type="text/markdown",
