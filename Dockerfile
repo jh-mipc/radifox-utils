@@ -1,8 +1,16 @@
-FROM ubuntu:20.04
-RUN apt-get update && apt-get install -y --no-install-recommends git python3 python3-pip
+ARG PYTHON_VERSION=3.11.6
+ARG DEBIAN_VERSION=bullseye
+
+FROM python:${PYTHON_VERSION}-slim-${DEBIAN_VERSION}
+ARG PYTHON_VERSION
+ARG DEBIAN_VERSION
+
+RUN apt-get update && apt-get install -y --no-install-recommends git
+
+COPY requirements.txt /tmp/src/requirements.txt
+RUN pip install -r /tmp/src/requirements.txt
 
 COPY . /tmp/src
-
 RUN pip install /tmp/src && rm -rf /tmp/src
 
-ENTRYPOINT ["apply-degrade"]
+ENTRYPOINT ["python"]
