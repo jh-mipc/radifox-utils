@@ -26,7 +26,7 @@ setup(
     version=__version__,
     cmdclass=cmdclass,
     author="IACL",
-    description="Medical image utilities provided with RADIFOX.",
+    description="Medical image utilities provided with RADIFOX",
     long_description=(Path(__file__).parent.resolve() / "README.md").read_text(),
     long_description_content_type="text/markdown",
     author_email="iaclsoftware@jhu.edu",
