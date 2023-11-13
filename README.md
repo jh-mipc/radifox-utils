@@ -1,18 +1,23 @@
-# Resize with Correct Sampling Step
-
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT) 
-[![coverage](https://gitlab.com/iacl/resize/-/raw/master/tests/coverage_badge.svg)]()
-
-| [Documentation](https://iacl.gitlab.io/resize) |
-
-
 ## Installation
 ```bash
-pip install git+https://gitlab.com/iacl/resize.git
+pip install radifox-utils
+```
+This will install the utils package with it's `scipy` dependancy chain.
+
+To install pytorch dependencies to use these functions with pytorch Tensors:
+```bash
+pip install radifox-utils[pytorch]
 ```
 
 
-## Sampling step when resizing an image
+## Degrade
+
+This is a small library to degrade (blur and downsample) a signal. Here, we
+aim to properly model the forward process in signal acquisition.
+
+## Resize
+
+### Sampling step when resizing an image
 
 When resizing a digital image with interpolation, we usually need to sample values at non-integer coordinates. The sampling step, i.e., the separation between two adjacent pixels/voxels to be sampled, then determines the digital resolution in the resulting image. When given a target digital resolution, we usually want our image resizing routines respect the corresponding sampling step. For example, when visualizing a zoomed-in medical image, if the digital resolution calculated from the image header mismatches the sampling step, we will see either a squeezed or stretched image.
 
@@ -31,7 +36,7 @@ y = zoom(x, 1 / sampling_step, order=1, mode='nearest')
 
 With Python version 3.7.6 and Scipy version 1.6.3, we will have y equal to
 
-```python
+```
 [0, 0.625, 1.25, 1.875, 2.5, 3.125, 3.75, 4.375, 5.]
 ```
 
@@ -48,9 +53,9 @@ x = np.arange(6).astype(float)
 y = rescale(x, 1 / sampling_step, order=1, mode='edge')
 ```
 
-With Python version 3.7.6 and sciki-image version 1.18.1, we have y
+With Python version 3.7.6 and sciki-image version 1.18.1, we have y equal to
 
-```python
+```
 [0, 0.5, 1.16666667, 1.83333333, 2.5, 3.16666667, 3.83333333, 4.5, 5]
 ```
 
@@ -75,30 +80,30 @@ y = interpolate(x, scale_factor=1/sampling_step, mode='linear')
 
 With Python version 3.7.6 and PyTorch version 1.8.1, we have
 
-```python
+```
 [0.0000, 0.5500, 1.2500, 1.9500, 2.6500, 3.3500, 4.0500, 4.7500]
 ```
 
 Here we have our 0.7 sampling step back (ignore the values that are affected by padding).
 
-## The shift of the resized image
+### The shift of the resized image
 
 Even if `torch.nn.functional.interpolate` preserves the sampling step, the output field of view (FOV) does not align with the original image, as we can see from the above example. It is usually preferred to have the FOVs center around the same position before and after the interpolation to avoid shifting the contents of the image.
 
-## Our implementation
+### Our implementation
 
 Here we provide an implementation to both preserve the sampling step and to align up the FOV.
 
 ```python
-from resize.scipy import resize
+from radifox.utils.resize.scipy import resize
 
 sampling_step = 0.7
 x = np.arange(6).astype(float)
 ya = resize(x, (sampling_step, ), order=1)
-print(ya) # [0.  0.4 1.1 1.8 2.5 3.2 3.9 4.6 5. ]
+print(ya) # [0.0 0.4 1.1 1.8 2.5 3.2 3.9 4.6 5.0]
 ```
 
-## Update the Affine Matrix
+### Update the Affine Matrix
 
 Some images, such as medical images, come with position and orientation information in addition to the image 
 array, usually as an affine matrix. We need to update that with a new origin and scale, based on our resized 
@@ -106,7 +111,7 @@ voxels. Our `update_affine` function assumes a homogeneous affine matrix as a nu
 
 ```python
 import numpy as np
-from resize.affine import update_affine
+from radifox.utils.resize.affine import update_affine
 
 original_affine = np.array([
     [1, 0, 0, 0],
@@ -121,10 +126,10 @@ This function will update the affine based on the new voxel size, taking into ac
 scale, translation or shear.
 
 ```python
-array([[1. , 0. , 0. , 0. ],
-       [0. , 1. , 0. , 0. ],
-       [0. , 0. , 4. , 1.5],
-       [0. , 0. , 0. , 1. ]])
+np.array([[1. , 0. , 0. , 0. ],
+          [0. , 1. , 0. , 0. ],
+          [0. , 0. , 4. , 1.5],
+          [0. , 0. , 0. , 1. ]])
 ```
 
 For a more complex example, we can create a different example matrix with existing values.
