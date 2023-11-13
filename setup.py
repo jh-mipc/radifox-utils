@@ -35,8 +35,8 @@ setup(
     packages=find_packages(),
     entry_points={
         "console_scripts": [
-            "apply-degrade=degrade.main:main",
-            "remove-3D-inplane-interp=degrade.downsample_3D_inplane:main",
+            "apply-degrade=radifox.utils.degrade.main:main",
+            "resample-inplane-res=radifox.utils.degrade.inplane_res:main",
         ]
     },
     install_requires=[
