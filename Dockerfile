@@ -5,6 +5,8 @@ FROM python:${PYTHON_VERSION}-slim-${DEBIAN_VERSION}
 ARG PYTHON_VERSION
 ARG DEBIAN_VERSION
 
+ENV PYTHONUSERBASE=/opt/python
+
 RUN apt-get update && \
     apt-get install -y --no-install-recommends git && \
     rm -rf /var/lib/apt/lists/*
