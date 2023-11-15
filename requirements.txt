@@ -1,5 +1,5 @@
 nibabel==5.1.0
 numpy==1.26.0
 scipy==1.11.3
-sigpy @ git+https://github.com/blakedewey/sigpy.git@main
+sigpy @ git+https://github.com/blakedewey/sigpy.git@v0.1.26
 transforms3d==0.4.1
