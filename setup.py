@@ -43,7 +43,7 @@ setup(
         "nibabel",
         "numpy",
         "scipy",
-        "sigpy @ git+https://github.com/blakedewey/sigpy.git@v0.1.26",
+        "sigpy-lite",
         "transforms3d",
     ],
     extras_require={
