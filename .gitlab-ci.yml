@@ -1,3 +1,7 @@
+variables:
+  GIT_STRATEGY: clone
+  GIT_DEPTH: 0
+
 build:
   image: docker:20.10.16
   stage: build
@@ -17,4 +21,5 @@ build:
     - DIGEST=$(docker inspect --format='{{index .Id}}' $TAG)
     - echo "FROM $TAG" | docker buildx build --label ci.digest=$DIGEST -t $TAG --push -
   only:
+    - main
     - tags
