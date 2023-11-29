@@ -9,7 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
  - Added CHANGELOG.md and filled in previous changes.
- - Harmonize GitLab CI and GitHub Actions workflows.
+ - Harmonize GitLab CI and GitHub Actions workflows. 
+ - Update Dockerfile to use Debian bookworm fixing a ldconfig bug
+
 
 ## [1.0.2] - 2023-11-15
 This version switches the sigpy dependency to a lighter fork (sigpy-lite) that does not automatically depend on numba and pywavelets.
