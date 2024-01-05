@@ -79,7 +79,9 @@ def process(in_fpath, out_fpath, target_res, verbose=False):
     # find the ratio of pixels
     downsample_shape = [int(np.round(d / s)) for d, s in zip(img.shape, scales)]
 
-    with timer_context(f"=== Degrading in-plane... ===", verbose=verbose):
+    with timer_context(
+        f"=== Cropping and filtering in k-space... ===", verbose=verbose
+    ):
         img = downsample_k_space(img, target_shape=downsample_shape)
         new_affine = update_affine(obj.affine, scales)
         nib.Nifti1Image(img, affine=new_affine, header=obj.header).to_filename(
@@ -92,10 +94,12 @@ def main(args=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("--in-fpath", type=Path, required=True)
     parser.add_argument("--out-fpath", type=Path, required=True)
-    parser.add_argument("--target-res", type=float, default=None)
+    parser.add_argument("--target-res", type=str, default=None)
     parser.add_argument("--verbose", action="store_true", default=False)
 
     parsed_args = parser.parse_args(sys.argv[1:] if args is None else args)
+
+    target_res = [float(r) for r in parsed_args.target_res.split("x")]
 
     for argname in ["in_fpath", "out_fpath"]:
         setattr(parsed_args, argname, getattr(parsed_args, argname).resolve())
@@ -109,7 +113,7 @@ def main(args=None):
     process(
         parsed_args.in_fpath,
         parsed_args.out_fpath,
-        target_res=parsed_args.target_res,
+        target_res=target_res,
         verbose=parsed_args.verbose,
     )
 
