@@ -35,8 +35,8 @@ setup(
     packages=find_namespace_packages(include=["radifox.*"]),
     entry_points={
         "console_scripts": [
-            "degrade-2d=radifox.utils.degrade.degrade_2d:main",
-            "degrade-3d=radifox.utils.degrade.degrade_3d:main",
+            "degrade-slice-selection=radifox.utils.degrade.degrade_slice_selection:main",
+            "degrade-fourier=radifox.utils.degrade.degrade_fourier:main",
         ]
     },
     install_requires=[

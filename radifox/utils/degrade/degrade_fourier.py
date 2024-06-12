@@ -94,12 +94,10 @@ def main(args=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("--in-fpath", type=Path, required=True)
     parser.add_argument("--out-fpath", type=Path, required=True)
-    parser.add_argument("--target-res", type=str, default=None)
+    parser.add_argument("--target-res", type=float, nargs=3)
     parser.add_argument("--verbose", action="store_true", default=False)
 
     parsed_args = parser.parse_args(sys.argv[1:] if args is None else args)
-
-    target_res = [float(r) for r in parsed_args.target_res.split("x")]
 
     for argname in ["in_fpath", "out_fpath"]:
         setattr(parsed_args, argname, getattr(parsed_args, argname).resolve())
@@ -113,13 +111,12 @@ def main(args=None):
     process(
         parsed_args.in_fpath,
         parsed_args.out_fpath,
-        target_res=target_res,
+        target_res=parsed_args.target_res,
         verbose=parsed_args.verbose,
     )
 
     if parsed_args.verbose:
         print("Done.")
-
 
 if __name__ == "__main__":
     main()
