@@ -19,7 +19,7 @@ def get_version_and_cmdclass(pkg_path):
     return module.__version__, module.get_cmdclass(pkg_path)
 
 
-__version__, cmdclass = get_version_and_cmdclass('radifox/utils')
+__version__, cmdclass = get_version_and_cmdclass("radifox/utils")
 
 setup(
     name=__package_name__,
@@ -32,11 +32,11 @@ setup(
     long_description=(Path(__file__).parent.resolve() / "README.md").read_text(),
     long_description_content_type="text/markdown",
     license="Apache License, 2.0",
-    packages=find_namespace_packages(include=['radifox.*']),
+    packages=find_namespace_packages(include=["radifox.*"]),
     entry_points={
         "console_scripts": [
-            "apply-degrade=radifox.utils.degrade.main:main",
-            "resample-inplane-res=radifox.utils.degrade.inplane_res:main",
+            "degrade-slice-selection=radifox.utils.degrade.degrade_slice_selection:main",
+            "degrade-fourier=radifox.utils.degrade.degrade_fourier:main",
         ]
     },
     install_requires=[

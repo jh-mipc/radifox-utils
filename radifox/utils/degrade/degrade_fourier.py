@@ -1,8 +1,8 @@
 """
-Downsample the in-plane of a volume to a target resolution or by 2.
-It's most common for 3D MRI to do scanner interpolation by a factor of 2,
-so that's the default for this script.
+Degrade an MR volume by cropping in k-space. To mitigate ringing, we
+apply a Fermi filter.
 
+Supports both 3D acquisitions and 2D acquisitions.
 """
 import argparse
 import sys
@@ -68,27 +68,20 @@ def timer_context(label, verbose=True):
             print(f"\tElapsed time: {elapsed_time:.4f}s")
 
 
-def process(in_fpath, out_fpath, inplane_res=None, axis=0, verbose=False):
+def process(in_fpath, out_fpath, target_res, verbose=False):
     obj = nib.Nifti1Image.load(in_fpath)
     img = obj.get_fdata(dtype=np.float32)
 
     zooms = list(obj.header.get_zooms())
-    throughplane_res = zooms.pop(axis)
-
-    if inplane_res is None:
-        inplane_res = [z * 2 for z in zooms]
-
-    target_res = inplane_res
-    target_res.insert(axis, throughplane_res)
     # Update the ratio of the new resolution
-    scales = [new / old for new, old in zip(inplane_res, zooms)]
-    # Insert `1` for the through-plane
-    scales.insert(axis, 1)
+    scales = [new / old for new, old in zip(target_res, zooms)]
 
     # find the ratio of pixels
     downsample_shape = [int(np.round(d / s)) for d, s in zip(img.shape, scales)]
 
-    with timer_context(f"=== Degrading in-plane... ===", verbose=verbose):
+    with timer_context(
+        f"=== Cropping and filtering in k-space... ===", verbose=verbose
+    ):
         img = downsample_k_space(img, target_shape=downsample_shape)
         new_affine = update_affine(obj.affine, scales)
         nib.Nifti1Image(img, affine=new_affine, header=obj.header).to_filename(
@@ -101,8 +94,7 @@ def main(args=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("--in-fpath", type=Path, required=True)
     parser.add_argument("--out-fpath", type=Path, required=True)
-    parser.add_argument("--target-inplane-res", type=float, default=None)
-    parser.add_argument("--axis", type=int, default=2)
+    parser.add_argument("--target-res", type=float, nargs=3)
     parser.add_argument("--verbose", action="store_true", default=False)
 
     parsed_args = parser.parse_args(sys.argv[1:] if args is None else args)
@@ -119,13 +111,12 @@ def main(args=None):
     process(
         parsed_args.in_fpath,
         parsed_args.out_fpath,
-        inplane_res=parsed_args.target_inplane_res,
-        axis=parsed_args.axis,
+        target_res=parsed_args.target_res,
+        verbose=parsed_args.verbose,
     )
 
     if parsed_args.verbose:
         print("Done.")
-
 
 if __name__ == "__main__":
     main()
