@@ -47,10 +47,6 @@ setup(
         "transforms3d",
     ],
     extras_require={
-        "dev": [
-            "pytest",
-            "pytest-cov",
-        ],
         "pytorch": "torch>=1.10.0",
     },
     python_requires=">=3.7",
