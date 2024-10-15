@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=61.0", 'tomli;python_version<"3.11"']
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "radifox-utils"
+dynamic = ["version"]
+description = "Medical image utilities provided with RADIFOX"
+readme = "README.md"
+requires-python = ">=3.7"
+license = {text = "Apache-2.0"}
+authors = [
+    {name = "JH-MIPC", email = "jhmipc@jh.edu"},
+]
+urls = { "Homepage" = "https://github.com/jh-mipc/radifox-utils" }
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "nibabel",
+    "numpy",
+    "scipy",
+    "sigpy-lite",
+    "transforms3d",
+]
+
+[project.scripts]
+degrade-slice-selection = "radifox.utils.degrade.degrade_slice_selection:main"
+degrade-fourier = "radifox.utils.degrade.degrade_fourier:main"
+
+[tool.setuptools.packages.find]
+include = ["radifox.*"]
+
+[miniver]
+package_path = "radifox/utils"
