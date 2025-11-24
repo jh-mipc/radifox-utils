@@ -22,7 +22,7 @@ dependencies = [
     "nibabel",
     "numpy",
     "scipy",
-    "sigpy-lite",
+    "sigpy-lite>=0.1.27",
     "transforms3d",
 ]
 
